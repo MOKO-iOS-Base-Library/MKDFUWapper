@@ -9,12 +9,12 @@ Pod::Spec.new do |s|
   projects to perform McuManager DFU firmware upgrades.
   DESC
 
-  s.homepage         = 'https://github.com/lovexiaoxia/MKDFUWapper'
+  s.homepage         = 'https://github.com/MOKO-iOS-Base-Library/MKDFUWapper'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
   s.author           = { 'lovexiaoxia' => 'lovexiaoxia@example.com' }
 
   # ⚠️ 替换为你的私有仓库地址
-  s.source           = { :git => 'git@github.com:lovexiaoxia/MKDFUWapper.git',
+  s.source           = { :git => 'git@github.com:MOKO-iOS-Base-Library/MKDFUWapper.git',
                          :tag => s.version.to_s }
 
   s.ios.deployment_target = '14.0'
