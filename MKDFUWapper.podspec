@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'MKDFUWapper'
-  s.version          = '0.0.1'
+  s.version          = '1.0.1'
   s.summary          = 'OC-compatible wrapper for Nordic iOSMcuManagerLibrary DFU'
 
   s.description      = <<-DESC
@@ -9,11 +9,10 @@ Pod::Spec.new do |s|
   projects to perform McuManager DFU firmware upgrades.
   DESC
 
-  s.homepage         = 'https://github.com/MOKO-iOS-Base-Library/MKDFUWapper'
+  s.homepage         = 'https://github.com/lovexiaoxia/MKDFUWapper'
   s.license          = { :type => 'MIT', :file => 'LICENSE' }
   s.author           = { 'lovexiaoxia' => 'lovexiaoxia@example.com' }
 
-  # ⚠️ 替换为你的私有仓库地址
   s.source           = { :git => 'git@github.com:MOKO-iOS-Base-Library/MKDFUWapper.git',
                          :tag => s.version.to_s }
 
@@ -24,4 +23,3 @@ Pod::Spec.new do |s|
 
   s.dependency 'iOSMcuManagerLibrary', '~> 1.7'
 end
-
