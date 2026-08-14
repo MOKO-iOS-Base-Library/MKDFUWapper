@@ -119,7 +119,7 @@ private class DFUPeripheralDelegate: PeripheralDelegate {
             pipelineDepth: 1,
             byteAlignment: .disabled,
             reassemblyBufferSize: 0,
-            upgradeMode: .confirmOnly
+            upgradeMode: .testAndConfirm
         )
 
         do {
