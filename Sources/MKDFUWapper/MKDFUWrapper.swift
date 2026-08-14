@@ -10,6 +10,19 @@ import Foundation
 import iOSMcuManagerLibrary
 import CoreBluetooth
 
+/// OC 兼容的升级模式枚举
+@objc public enum MKDFUUpgradeMode: Int {
+    /// 仅测试：上传后发送 test + reset，设备重启运行新固件。
+    /// 如果新固件不支持自动确认，下次重启会回滚到旧固件。
+    case testOnly = 0
+    /// 仅确认：上传后直接发送 confirm + reset，设备重启后永久使用新固件。
+    /// 适用于新固件不支持 auto-confirm 和 SMP 服务的场景。
+    case confirmOnly = 1
+    /// 测试并确认：上传后先 test + reset，重连新固件验证后发送 confirm + reset。
+    /// 最安全的升级方式，适用于新固件支持 SMP 服务的场景。
+    case testAndConfirm = 2
+}
+
 /// OC 兼容的 DFU 回调代理
 @objc public protocol MKDFUWrapperDelegate: AnyObject {
     /// 固件升级进度回调 (0.0 ~ 1.0)
@@ -69,17 +82,35 @@ private class DFUPeripheralDelegate: PeripheralDelegate {
         super.init()
     }
 
-    /// 开始 DFU 升级
+    /// 开始 DFU 升级（默认使用 confirmOnly 模式）
     /// - Parameters:
     ///   - peripheral: 已连接的 BLE 外设
     ///   - firmwareData: 固件文件数据 (.bin / .zip / .suit)
     @objc public func startDFU(with peripheral: CBPeripheral, firmwareData: Data) {
+        startDFU(with: peripheral, firmwareData: firmwareData, upgradeMode: .confirmOnly)
+    }
+
+    /// 开始 DFU 升级（可配置升级模式）
+    /// - Parameters:
+    ///   - peripheral: 已连接的 BLE 外设
+    ///   - firmwareData: 固件文件数据 (.bin / .zip / .suit)
+    ///   - upgradeMode: 升级模式（testOnly / confirmOnly / testAndConfirm）
+    @objc public func startDFU(with peripheral: CBPeripheral, firmwareData: Data, upgradeMode: MKDFUUpgradeMode) {
         guard !isUpdating else {
             delegate?.dfuDidFail(withError: "DFU is already in progress")
             return
         }
 
         isUpdating = true
+
+        // 将 OC 枚举映射为 iOSMcuManagerLibrary 的升级模式
+        let mode: FirmwareUpgradeMode
+        switch upgradeMode {
+        case .testOnly:       mode = .testOnly
+        case .confirmOnly:    mode = .confirmOnly
+        case .testAndConfirm: mode = .testAndConfirm
+        }
+        print("DFU: Upgrade mode: \(upgradeMode) -> \(mode)")
 
         // 使用 identifier 初始化 Transport，确保 Transport 通过自己的 CBCentralManager
         // 检索 CBPeripheral，而不是复用 App 的 CBCentralManager 创建的 CBPeripheral 对象。
@@ -119,7 +150,7 @@ private class DFUPeripheralDelegate: PeripheralDelegate {
             pipelineDepth: 1,
             byteAlignment: .disabled,
             reassemblyBufferSize: 0,
-            upgradeMode: .testAndConfirm
+            upgradeMode: mode
         )
 
         do {
