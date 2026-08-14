@@ -1,5 +1,5 @@
 {
-  "originHash" : "e8f34d1bdf6df625453329ceb839f4d63e0c07b454f27679889eb9bdde879458",
+  "originHash" : "8a3510ae4d9a27a0e7eb89a15aa5d4d99c0f2b30b770008a8552701a3b262d7b",
   "pins" : [
     {
       "identity" : "ios-ble-library",
@@ -33,8 +33,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/nordicsemi/IOS-nRF-Connect-Device-Manager.git",
       "state" : {
-        "revision" : "0c211879e9e97ea756eaa76cd2182b610e6519b2",
-        "version" : "1.14.6"
+        "branch" : "main",
+        "revision" : "0c211879e9e97ea756eaa76cd2182b610e6519b2"
       }
     },
     {

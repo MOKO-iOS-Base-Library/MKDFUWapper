@@ -15,7 +15,7 @@ let package = Package(
     dependencies: [
         .package(
             url: "https://github.com/nordicsemi/IOS-nRF-Connect-Device-Manager.git",
-            from: "1.7.0"
+            branch: "main"
         )
     ],
     targets: [
