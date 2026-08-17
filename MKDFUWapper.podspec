@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'MKDFUWapper'
-  s.version          = '1.0.3'
+  s.version          = '1.0.4'
   s.summary          = 'OC-compatible wrapper for Nordic iOSMcuManagerLibrary DFU'
 
   s.description      = <<-DESC
@@ -21,5 +21,5 @@ Pod::Spec.new do |s|
 
   s.source_files = 'Sources/MKDFUWapper/**/*.swift'
 
-  s.dependency 'iOSMcuManagerLibrary', '~> 1.7'
+  s.dependency 'iOSMcuManagerLibrary'
 end
