@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'MKDFUWapper'
-  s.version          = '1.0.2'
+  s.version          = '1.0.3'
   s.summary          = 'OC-compatible wrapper for Nordic iOSMcuManagerLibrary DFU'
 
   s.description      = <<-DESC
