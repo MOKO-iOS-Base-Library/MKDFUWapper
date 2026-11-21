@@ -9,6 +9,7 @@
 import Foundation
 import iOSMcuManagerLibrary
 import CoreBluetooth
+import ZIPFoundation
 
 /// OC 兼容的升级模式枚举
 @objc public enum MKDFUUpgradeMode: Int {
@@ -154,9 +155,7 @@ private class DFUPeripheralDelegate: PeripheralDelegate {
         )
 
         do {
-            let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("firmware.bin")
-            try firmwareData.write(to: tempURL)
-            let package = try McuMgrPackage(from: tempURL)
+            let package = try makePackage(from: firmwareData)
 
             // 打印诊断信息
             print("DFU: Transport initial MTU: \(transport.mtu ?? -1)")
@@ -242,6 +241,70 @@ extension MKDFUWrapper: FirmwareUpgradeDelegate {
     }
 
     // MARK: - Private Helpers
+
+    /// 生成固件包。
+    /// 设备固件常见两种形式：直接的 .bin 镜像、以及把 .bin 打包成 zip 的固件包。
+    /// McuMgrPackage 只根据文件扩展名判断类型，因此这里先识别 zip 魔数，
+    /// 带 manifest.json 的按标准 zip 包解析，否则从 zip 中取出 .bin 镜像再按 bin 解析，
+    /// 避免把 zip 内容当成镜像上传导致设备校验失败后断开连接。
+    private func makePackage(from firmwareData: Data) throws -> McuMgrPackage {
+        let tempDirectory = FileManager.default.temporaryDirectory
+        let isZip = firmwareData.count >= 4
+            && firmwareData[firmwareData.startIndex] == 0x50
+            && firmwareData[firmwareData.startIndex + 1] == 0x4B
+            && firmwareData[firmwareData.startIndex + 2] == 0x03
+            && firmwareData[firmwareData.startIndex + 3] == 0x04
+        guard isZip else {
+            let binURL = tempDirectory.appendingPathComponent("mkmcu_firmware_\(UUID().uuidString).bin")
+            defer { try? FileManager.default.removeItem(at: binURL) }
+            try firmwareData.write(to: binURL)
+            return try McuMgrPackage(from: binURL)
+        }
+
+        // 优先按带 manifest.json 的标准固件包解析
+        let zipURL = tempDirectory.appendingPathComponent("mkmcu_firmware_\(UUID().uuidString).zip")
+        defer { try? FileManager.default.removeItem(at: zipURL) }
+        try firmwareData.write(to: zipURL)
+        if let package = try? McuMgrPackage(from: zipURL) {
+            print("DFU: Firmware data is a ZIP package, parsed with manifest")
+            return package
+        }
+
+        // 没有 manifest.json 时，从 zip 中取出 .bin 镜像
+        guard let imageData = Self.extractBinImage(from: firmwareData) else {
+            print("DFU: ⚠️ ZIP firmware has no manifest.json and no .bin image")
+            throw NSError(domain: "MKDFUWapper",
+                          code: -1,
+                          userInfo: [NSLocalizedDescriptionKey: "No firmware image found in the ZIP file."])
+        }
+        print("DFU: Firmware data is a ZIP without manifest, extracted bin image (\(imageData.count) bytes)")
+        let binURL = tempDirectory.appendingPathComponent("mkmcu_firmware_\(UUID().uuidString).bin")
+        defer { try? FileManager.default.removeItem(at: binURL) }
+        try imageData.write(to: binURL)
+        return try McuMgrPackage(from: binURL)
+    }
+
+    /// 从 zip 数据中取出体积最大的 .bin 文件
+    private static func extractBinImage(from data: Data) -> Data? {
+        guard let archive = try? Archive(data: data, accessMode: .read) else {
+            return nil
+        }
+        var imageData: Data?
+        for entry in archive where entry.type == .file && entry.path.lowercased().hasSuffix(".bin") {
+            var entryData = Data()
+            do {
+                _ = try archive.extract(entry) { chunk in
+                    entryData.append(chunk)
+                }
+            } catch {
+                continue
+            }
+            if entryData.count > (imageData?.count ?? 0) {
+                imageData = entryData
+            }
+        }
+        return imageData
+    }
 
     private static func stateToString(_ state: iOSMcuManagerLibrary.FirmwareUpgradeState) -> String {
         switch state {
